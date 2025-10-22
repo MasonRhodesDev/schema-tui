@@ -1,11 +1,13 @@
 pub mod schema;
 pub mod options;
 pub mod config;
+pub mod tui;
 
 // Re-export commonly used types
 pub use schema::{ConfigSchema, SchemaField, FieldType, OptionSource, UIWidget};
 pub use options::{OptionProvider, OptionResolver};
 pub use config::{ConfigStore, ConfigLoader, ConfigSaver};
+pub use tui::{Widget, WidgetResult};
 
 // Placeholder for TUI - will implement next
 pub struct SchemaTUI {
