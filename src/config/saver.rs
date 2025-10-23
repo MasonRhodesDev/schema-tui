@@ -49,8 +49,9 @@ impl ConfigSaver {
                 if let Some(val) = value {
                     let value_str = Self::format_value(&val);
                     output.push_str(&format!("{} = {}\n\n", field.id, value_str));
-                } else if !field.optional {
-                    output.push_str(&format!("# {} = <required>\n\n", field.id));
+                } else {
+                    // Write empty string for missing values
+                    output.push_str(&format!("{} = \"\"\n\n", field.id));
                 }
             }
             

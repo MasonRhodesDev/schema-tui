@@ -1,6 +1,7 @@
 use crossterm::event::KeyEvent;
 use ratatui::{layout::Rect, Frame};
 use serde_json::Value;
+use crate::tui::theme::Theme;
 
 /// Result of handling a key event in a widget
 #[derive(Debug, Clone)]
@@ -18,7 +19,7 @@ pub enum WidgetResult {
 /// Base trait for all interactive widgets
 pub trait Widget {
     /// Render the widget to the frame
-    fn render(&self, frame: &mut Frame, area: Rect, focused: bool);
+    fn render(&self, frame: &mut Frame, area: Rect, focused: bool, theme: &Theme);
     
     /// Handle a key event, returning the result
     fn handle_key(&mut self, key: KeyEvent) -> WidgetResult;
@@ -31,6 +32,9 @@ pub trait Widget {
     
     /// Reset to initial state
     fn reset(&mut self);
+    
+    /// Activate the widget for editing (transition to Editing state)
+    fn activate(&mut self);
 }
 
 /// Widget state for tracking focus and editing

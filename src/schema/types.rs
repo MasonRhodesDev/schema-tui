@@ -19,6 +19,8 @@ pub struct SchemaSection {
     #[serde(default)]
     pub icon: Option<String>,
     pub fields: Vec<SchemaField>,
+    #[serde(default)]
+    pub visible_when: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -41,6 +43,9 @@ pub struct SchemaField {
     
     #[serde(default)]
     pub keybind: Option<String>,
+    
+    #[serde(default)]
+    pub subsection: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -117,6 +122,11 @@ pub enum OptionSource {
     #[serde(rename = "function")]
     Function {
         name: String,
+    },
+    
+    #[serde(rename = "provider")]
+    Provider {
+        provider: String,
     },
     
     #[serde(rename = "file_list")]

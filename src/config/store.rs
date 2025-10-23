@@ -62,4 +62,28 @@ impl ConfigStore {
     pub fn as_map(&self) -> &HashMap<String, Value> {
         &self.values
     }
+    
+    /// Flatten nested structure to dot-notation keys
+    /// {"general": {"wallpaper": "x"}} -> {"general.wallpaper": "x"}
+    pub fn as_flat_map(&self) -> HashMap<String, Value> {
+        let mut flat = HashMap::new();
+        for (key, value) in &self.values {
+            Self::flatten_value(key, value, &mut flat);
+        }
+        flat
+    }
+    
+    fn flatten_value(prefix: &str, value: &Value, output: &mut HashMap<String, Value>) {
+        match value {
+            Value::Object(map) => {
+                for (key, val) in map {
+                    let new_key = format!("{}.{}", prefix, key);
+                    Self::flatten_value(&new_key, val, output);
+                }
+            }
+            _ => {
+                output.insert(prefix.to_string(), value.clone());
+            }
+        }
+    }
 }

@@ -2,12 +2,13 @@ use super::{Widget, WidgetResult, WidgetState};
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
     layout::Rect,
-    style::{Color, Modifier, Style},
+    style::{Modifier, Style},
     text::{Line, Span},
     widgets::{Block, Borders, List, ListItem, ListState, Paragraph},
     Frame,
 };
 use serde_json::Value;
+use crate::tui::theme::Theme;
 
 pub struct Dropdown {
     options: Vec<String>,
@@ -70,11 +71,11 @@ impl Dropdown {
 }
 
 impl Widget for Dropdown {
-    fn render(&self, frame: &mut Frame, area: Rect, focused: bool) {
+    fn render(&self, frame: &mut Frame, area: Rect, focused: bool, theme: &Theme) {
         if self.state == WidgetState::Editing {
-            self.render_dropdown(frame, area);
+            self.render_dropdown(frame, area, theme);
         } else {
-            self.render_compact(frame, area, focused);
+            self.render_compact(frame, area, focused, theme);
         }
     }
     
@@ -120,14 +121,19 @@ impl Widget for Dropdown {
     fn reset(&mut self) {
         self.state = WidgetState::Normal;
     }
+    
+    fn activate(&mut self) {
+        self.state = WidgetState::Editing;
+        self.list_state.select(Some(self.selected_index));
+    }
 }
 
 impl Dropdown {
-    fn render_compact(&self, frame: &mut Frame, area: Rect, focused: bool) {
+    fn render_compact(&self, frame: &mut Frame, area: Rect, focused: bool, theme: &Theme) {
         let style = if focused {
-            Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)
+            Style::default().fg(theme.focused).add_modifier(Modifier::BOLD)
         } else {
-            Style::default().fg(Color::Reset)
+            Style::default().fg(theme.text)
         };
         
         let current = self.get_current_value();
@@ -135,15 +141,16 @@ impl Dropdown {
             Span::styled(format!("{}: ", self.label), Style::default().add_modifier(Modifier::BOLD)),
             Span::styled(current, style),
             Span::raw(" "),
-            Span::styled("▼", Style::default().fg(Color::DarkGray)),
+            Span::styled("▼", Style::default().fg(theme.text_dim)),
         ]);
         
         let paragraph = Paragraph::new(content);
         frame.render_widget(paragraph, area);
     }
     
-    fn render_dropdown(&self, frame: &mut Frame, area: Rect) {
-        let dropdown_height = (self.options.len() + 2).min(10) as u16;
+    fn render_dropdown(&self, frame: &mut Frame, area: Rect, theme: &Theme) {
+        let frame_size = frame.area();
+        let dropdown_height = (self.options.len() + 2).min(15) as u16;
         let dropdown_width = self.options.iter()
             .map(|s| s.len())
             .max()
@@ -153,13 +160,22 @@ impl Dropdown {
         let popup_area = Rect {
             x: area.x,
             y: area.y.saturating_add(1),
-            width: dropdown_width.min(area.width),
-            height: dropdown_height.min(area.height.saturating_sub(1)),
+            width: dropdown_width.min(frame_size.width.saturating_sub(2)),
+            height: dropdown_height.min(frame_size.height.saturating_sub(area.y + 2)),
         };
+        
+        use ratatui::widgets::Clear;
+        use ratatui::style::Color;
+        frame.render_widget(Clear, popup_area);
+        let bg = Block::default().style(Style::default().bg(Color::Black).fg(Color::White));
+        frame.render_widget(bg, popup_area);
         
         let items: Vec<ListItem> = self.options
             .iter()
-            .map(|opt| ListItem::new(Line::from(opt.as_str())))
+            .map(|opt| {
+                ListItem::new(Line::from(opt.as_str()))
+                    .style(Style::default().bg(Color::Black).fg(Color::White))
+            })
             .collect();
         
         let list = List::new(items)
@@ -167,14 +183,16 @@ impl Dropdown {
                 Block::default()
                     .borders(Borders::ALL)
                     .title(format!("Select {} (↑↓ navigate, Enter confirm, Esc cancel)", self.label))
-                    .border_style(Style::default().fg(Color::Cyan))
+                    .border_style(Style::default().fg(theme.popup_border).add_modifier(Modifier::BOLD))
+                    .style(Style::default().bg(Color::Black).fg(Color::White))
             )
             .highlight_style(
                 Style::default()
-                    .bg(Color::Cyan)
-                    .fg(Color::Black)
+                    .bg(Color::DarkGray)
+                    .fg(Color::White)
                     .add_modifier(Modifier::BOLD),
             )
+            .style(Style::default().bg(Color::Black).fg(Color::White))
             .highlight_symbol("» ");
         
         frame.render_stateful_widget(list, popup_area, &mut self.list_state.clone());

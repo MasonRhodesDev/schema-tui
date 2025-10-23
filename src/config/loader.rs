@@ -8,11 +8,19 @@ pub struct ConfigLoader;
 
 impl ConfigLoader {
     pub fn from_toml_file(path: impl AsRef<Path>) -> Result<ConfigStore> {
+        Self::from_toml_file_with_expansion(path, true)
+    }
+    
+    pub fn from_toml_file_with_expansion(path: impl AsRef<Path>, expand: bool) -> Result<ConfigStore> {
         let content = std::fs::read_to_string(path)?;
-        Self::from_toml_string(&content)
+        Self::from_toml_string_with_expansion(&content, expand)
     }
     
     pub fn from_toml_string(content: &str) -> Result<ConfigStore> {
+        Self::from_toml_string_with_expansion(content, true)
+    }
+    
+    pub fn from_toml_string_with_expansion(content: &str, expand: bool) -> Result<ConfigStore> {
         let toml_value: toml::Value = toml::from_str(content)?;
         let json_value = Self::toml_to_json(toml_value);
         
@@ -23,7 +31,9 @@ impl ConfigLoader {
         };
         
         let mut store = ConfigStore::from_map(values);
-        Self::expand_all_env_vars(&mut store);
+        if expand {
+            Self::expand_all_env_vars(&mut store);
+        }
         
         Ok(store)
     }

@@ -10,17 +10,18 @@ use ratatui::{
 use serde_json::Value;
 use crate::tui::theme::Theme;
 
-pub struct NumberInput {
+pub struct FloatInput {
     buffer: String,
     cursor_pos: usize,
     state: WidgetState,
     label: String,
-    min: Option<i64>,
-    max: Option<i64>,
+    min: Option<f64>,
+    max: Option<f64>,
+    step: Option<f64>,
 }
 
-impl NumberInput {
-    pub fn new(label: impl Into<String>, initial_value: i64, min: Option<i64>, max: Option<i64>) -> Self {
+impl FloatInput {
+    pub fn new(label: impl Into<String>, initial_value: f64, min: Option<f64>, max: Option<f64>, step: Option<f64>) -> Self {
         let buffer = initial_value.to_string();
         let cursor_pos = buffer.len();
         
@@ -31,11 +32,12 @@ impl NumberInput {
             label: label.into(),
             min,
             max,
+            step,
         }
     }
     
     fn insert_char(&mut self, c: char) {
-        if c.is_ascii_digit() || (c == '-' && self.cursor_pos == 0) {
+        if c.is_ascii_digit() || (c == '-' && self.cursor_pos == 0) || (c == '.' && !self.buffer.contains('.')) {
             self.buffer.insert(self.cursor_pos, c);
             self.cursor_pos += 1;
         }
@@ -48,8 +50,8 @@ impl NumberInput {
         }
     }
     
-    fn validate(&self) -> Option<i64> {
-        let num = self.buffer.parse::<i64>().ok()?;
+    fn validate(&self) -> Option<f64> {
+        let num = self.buffer.parse::<f64>().ok()?;
         
         if let Some(min) = self.min {
             if num < min {
@@ -77,7 +79,7 @@ impl NumberInput {
     }
 }
 
-impl Widget for NumberInput {
+impl Widget for FloatInput {
     fn render(&self, frame: &mut Frame, area: Rect, focused: bool, theme: &Theme) {
         let is_valid = self.validate().is_some();
         
@@ -141,7 +143,7 @@ impl Widget for NumberInput {
             KeyCode::Enter => {
                 if let Some(num) = self.validate() {
                     self.state = WidgetState::Normal;
-                    WidgetResult::Confirmed(Value::Number(num.into()))
+                    WidgetResult::Confirmed(Value::from(num))
                 } else {
                     WidgetResult::Continue
                 }
@@ -170,20 +172,42 @@ impl Widget for NumberInput {
                 }
                 WidgetResult::Continue
             }
+            KeyCode::Up => {
+                if let (Some(current), Some(step)) = (self.validate(), self.step) {
+                    let new_val = current + step;
+                    if self.max.map_or(true, |max| new_val <= max) {
+                        self.buffer = new_val.to_string();
+                        self.cursor_pos = self.buffer.len();
+                        return WidgetResult::Changed(self.get_value());
+                    }
+                }
+                WidgetResult::Continue
+            }
+            KeyCode::Down => {
+                if let (Some(current), Some(step)) = (self.validate(), self.step) {
+                    let new_val = current - step;
+                    if self.min.map_or(true, |min| new_val >= min) {
+                        self.buffer = new_val.to_string();
+                        self.cursor_pos = self.buffer.len();
+                        return WidgetResult::Changed(self.get_value());
+                    }
+                }
+                WidgetResult::Continue
+            }
             _ => WidgetResult::Continue,
         }
     }
     
     fn get_value(&self) -> Value {
         if let Some(num) = self.validate() {
-            Value::Number(num.into())
+            Value::from(num)
         } else {
             Value::String(self.buffer.clone())
         }
     }
     
     fn set_value(&mut self, value: Value) {
-        if let Some(n) = value.as_i64() {
+        if let Some(n) = value.as_f64() {
             self.buffer = n.to_string();
             self.cursor_pos = self.buffer.len();
         }

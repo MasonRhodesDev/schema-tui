@@ -2,12 +2,13 @@ use super::{Widget, WidgetResult, WidgetState};
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
     layout::Rect,
-    style::{Color, Modifier, Style},
+    style::{Modifier, Style},
     text::{Line, Span},
     widgets::{Block, Borders, List, ListItem, ListState, Paragraph},
     Frame,
 };
 use serde_json::Value;
+use crate::tui::theme::Theme;
 
 pub struct SearchableDropdown {
     all_options: Vec<String>,
@@ -85,11 +86,11 @@ impl SearchableDropdown {
 }
 
 impl Widget for SearchableDropdown {
-    fn render(&self, frame: &mut Frame, area: Rect, focused: bool) {
+    fn render(&self, frame: &mut Frame, area: Rect, focused: bool, theme: &Theme) {
         if self.state == WidgetState::Editing {
-            self.render_searchable(frame, area);
+            self.render_searchable(frame, area, theme);
         } else {
-            self.render_compact(frame, area, focused);
+            self.render_compact(frame, area, focused, theme);
         }
     }
     
@@ -148,45 +149,64 @@ impl Widget for SearchableDropdown {
         self.state = WidgetState::Normal;
         self.search_buffer.clear();
     }
+    
+    fn activate(&mut self) {
+        self.state = WidgetState::Editing;
+        self.search_buffer.clear();
+        self.filtered_options = self.all_options.clone();
+        self.selected_index = 0;
+        self.list_state.select(Some(0));
+    }
 }
 
 impl SearchableDropdown {
-    fn render_compact(&self, frame: &mut Frame, area: Rect, focused: bool) {
+    fn render_compact(&self, frame: &mut Frame, area: Rect, focused: bool, theme: &Theme) {
         let style = if focused {
-            Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)
+            Style::default().fg(theme.focused).add_modifier(Modifier::BOLD)
         } else {
-            Style::default().fg(Color::Reset)
+            Style::default().fg(theme.text)
         };
         
         let content = Line::from(vec![
             Span::styled(format!("{}: ", self.label), Style::default().add_modifier(Modifier::BOLD)),
             Span::styled(&self.current_value, style),
             Span::raw(" "),
-            Span::styled("🔍", Style::default().fg(Color::DarkGray)),
+            Span::styled("🔍", Style::default().fg(theme.text_dim)),
         ]);
         
         let paragraph = Paragraph::new(content);
         frame.render_widget(paragraph, area);
     }
     
-    fn render_searchable(&self, frame: &mut Frame, area: Rect) {
-        let dropdown_height = (self.filtered_options.len() + 4).min(12) as u16;
+    fn render_searchable(&self, frame: &mut Frame, area: Rect, theme: &Theme) {
+        let frame_size = frame.area();
+        let dropdown_height = (self.filtered_options.len() + 2).min(15) as u16;
         let dropdown_width = self.filtered_options.iter()
             .map(|s| s.len())
             .max()
-            .unwrap_or(20)
-            .max(self.label.len() + 10) as u16 + 4;
+            .unwrap_or(40)
+            .max(self.label.len() + 30)
+            .max(60) as u16 + 4;
         
         let popup_area = Rect {
             x: area.x,
             y: area.y.saturating_add(1),
-            width: dropdown_width.min(area.width),
-            height: dropdown_height.min(area.height.saturating_sub(1)),
+            width: dropdown_width.min(frame_size.width.saturating_sub(2)),
+            height: dropdown_height.min(frame_size.height.saturating_sub(area.y + 2)),
         };
+        
+        use ratatui::widgets::Clear;
+        use ratatui::style::Color;
+        frame.render_widget(Clear, popup_area);
+        let bg = Block::default().style(Style::default().bg(Color::Black).fg(Color::White));
+        frame.render_widget(bg, popup_area);
         
         let items: Vec<ListItem> = self.filtered_options
             .iter()
-            .map(|opt| ListItem::new(Line::from(opt.as_str())))
+            .map(|opt| {
+                ListItem::new(Line::from(opt.as_str()))
+                    .style(Style::default().bg(Color::Black).fg(Color::White))
+            })
             .collect();
         
         let title = if self.search_buffer.is_empty() {
@@ -200,14 +220,16 @@ impl SearchableDropdown {
                 Block::default()
                     .borders(Borders::ALL)
                     .title(title)
-                    .border_style(Style::default().fg(Color::Cyan))
+                    .border_style(Style::default().fg(theme.popup_border).add_modifier(Modifier::BOLD))
+                    .style(Style::default().bg(Color::Black).fg(Color::White))
             )
             .highlight_style(
                 Style::default()
-                    .bg(Color::Cyan)
-                    .fg(Color::Black)
+                    .bg(Color::DarkGray)
+                    .fg(Color::White)
                     .add_modifier(Modifier::BOLD),
             )
+            .style(Style::default().bg(Color::Black).fg(Color::White))
             .highlight_symbol("» ");
         
         frame.render_stateful_widget(list, popup_area, &mut self.list_state.clone());

@@ -14,6 +14,13 @@ pub struct Theme {
     pub text_dim: Color,
     pub background: Color,
     pub border: Color,
+    pub highlight_bg: Color,
+    pub highlight_fg: Color,
+    pub focused: Color,
+    pub editing: Color,
+    pub popup_bg: Color,
+    pub popup_fg: Color,
+    pub popup_border: Color,
 }
 
 impl Default for Theme {
@@ -34,10 +41,17 @@ impl Theme {
             success: Color::Green,
             error: Color::Red,
             warning: Color::Yellow,
-            text: Color::Reset,        // Use terminal's default foreground
+            text: Color::Reset,
             text_dim: Color::DarkGray,
-            background: Color::Reset,   // Use terminal's default background
+            background: Color::Reset,
             border: Color::Gray,
+            highlight_bg: Color::Reset,
+            highlight_fg: Color::Cyan,
+            focused: Color::Yellow,
+            editing: Color::Cyan,
+            popup_bg: Color::Reset,
+            popup_fg: Color::Reset,
+            popup_border: Color::Cyan,
         }
     }
     
@@ -54,6 +68,13 @@ impl Theme {
             text_dim: Color::DarkGray,
             background: Color::Black,
             border: Color::Gray,
+            highlight_bg: Color::DarkGray,
+            highlight_fg: Color::White,
+            focused: Color::Yellow,
+            editing: Color::Cyan,
+            popup_bg: Color::Black,
+            popup_fg: Color::White,
+            popup_border: Color::Cyan,
         }
     }
     
@@ -70,6 +91,13 @@ impl Theme {
             text_dim: Color::Gray,
             background: Color::White,
             border: Color::DarkGray,
+            highlight_bg: Color::Gray,
+            highlight_fg: Color::Black,
+            focused: Color::Blue,
+            editing: Color::Cyan,
+            popup_bg: Color::White,
+            popup_fg: Color::Black,
+            popup_border: Color::Blue,
         }
     }
 }

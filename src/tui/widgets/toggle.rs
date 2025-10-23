@@ -2,12 +2,13 @@ use super::{Widget, WidgetResult};
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
     layout::Rect,
-    style::{Color, Modifier, Style},
+    style::{Modifier, Style},
     text::{Line, Span},
     widgets::Paragraph,
     Frame,
 };
 use serde_json::Value;
+use crate::tui::theme::Theme;
 
 pub struct Toggle {
     value: bool,
@@ -28,15 +29,15 @@ impl Toggle {
 }
 
 impl Widget for Toggle {
-    fn render(&self, frame: &mut Frame, area: Rect, focused: bool) {
+    fn render(&self, frame: &mut Frame, area: Rect, focused: bool, theme: &Theme) {
         let style = if focused {
-            Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)
+            Style::default().fg(theme.focused).add_modifier(Modifier::BOLD)
         } else {
-            Style::default().fg(Color::Reset)
+            Style::default().fg(theme.text)
         };
         
         let indicator = if self.value { "✓" } else { "✗" };
-        let indicator_color = if self.value { Color::Green } else { Color::Red };
+        let indicator_color = if self.value { theme.success } else { theme.error };
         
         let content = Line::from(vec![
             Span::styled(format!("{}: ", self.label), Style::default().add_modifier(Modifier::BOLD)),
@@ -71,5 +72,10 @@ impl Widget for Toggle {
     
     fn reset(&mut self) {
         // Toggle doesn't need reset logic
+    }
+    
+    fn activate(&mut self) {
+        // Toggle activates immediately - just toggle the value
+        self.toggle();
     }
 }

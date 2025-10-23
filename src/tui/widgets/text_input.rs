@@ -2,12 +2,13 @@ use super::{Widget, WidgetResult, WidgetState};
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
     layout::Rect,
-    style::{Color, Modifier, Style},
+    style::{Modifier, Style},
     text::{Line, Span},
     widgets::{Block, Borders, Paragraph},
     Frame,
 };
 use serde_json::Value;
+use crate::tui::theme::Theme;
 
 pub struct TextInput {
     buffer: String,
@@ -71,13 +72,16 @@ impl TextInput {
 }
 
 impl Widget for TextInput {
-    fn render(&self, frame: &mut Frame, area: Rect, focused: bool) {
+    fn render(&self, frame: &mut Frame, area: Rect, focused: bool, theme: &Theme) {
         let style = if self.state == WidgetState::Editing {
-            Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)
+            Style::default()
+                .fg(theme.popup_fg)
+                .bg(theme.popup_bg)
+                .add_modifier(Modifier::BOLD)
         } else if focused {
-            Style::default().fg(Color::Yellow)
+            Style::default().fg(theme.focused)
         } else {
-            Style::default().fg(Color::Reset)
+            Style::default().fg(theme.text)
         };
         
         let text = self.get_display_text();
@@ -89,7 +93,12 @@ impl Widget for TextInput {
         let block = Block::default()
             .borders(if focused { Borders::ALL } else { Borders::NONE })
             .border_style(if self.state == WidgetState::Editing {
-                Style::default().fg(Color::Cyan)
+                Style::default().fg(theme.editing)
+            } else {
+                Style::default()
+            })
+            .style(if self.state == WidgetState::Editing {
+                Style::default().bg(theme.popup_bg)
             } else {
                 Style::default()
             });
@@ -159,10 +168,8 @@ impl Widget for TextInput {
         self.state = WidgetState::Normal;
         self.cursor_pos = self.buffer.len();
     }
-}
-
-impl TextInput {
-    pub fn start_editing(&mut self) {
+    
+    fn activate(&mut self) {
         self.state = WidgetState::Editing;
         self.cursor_pos = self.buffer.len();
     }

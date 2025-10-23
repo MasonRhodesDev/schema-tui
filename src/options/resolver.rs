@@ -36,6 +36,10 @@ impl OptionResolver {
                 self.resolve_from_provider(name)
             }
             
+            OptionSource::Provider { provider } => {
+                self.resolve_from_provider(provider)
+            }
+            
             OptionSource::FileList { directory, pattern, extract } => {
                 self.resolve_from_file_list(directory, pattern, extract.as_deref())
             }
@@ -72,14 +76,40 @@ impl OptionResolver {
         Ok(options)
     }
     
-    fn resolve_from_provider(&self, name: &str) -> Result<Vec<String>> {
+    pub fn resolve_from_provider(&self, name: &str) -> Result<Vec<String>> {
         let provider = self.providers.get(name)
             .ok_or_else(|| anyhow!("Unknown option provider: {}", name))?;
         
         provider.get_options()
     }
     
-    fn resolve_from_file_list(&self, directory: &str, pattern: &str, extract: Option<&str>) -> Result<Vec<String>> {
+    pub fn resolve_from_script_sync(&self, command: &str) -> Result<Vec<String>> {
+        use std::process::Command;
+        
+        let output = Command::new("sh")
+            .arg("-c")
+            .arg(command)
+            .output()?;
+        
+        if !output.status.success() {
+            return Err(anyhow!("Script failed: {}", String::from_utf8_lossy(&output.stderr)));
+        }
+        
+        let stdout = String::from_utf8(output.stdout)?;
+        
+        // Try to parse as JSON array first
+        if let Ok(options) = serde_json::from_str::<Vec<String>>(&stdout) {
+            return Ok(options);
+        }
+        
+        // Fallback: split by newlines
+        Ok(stdout.lines()
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+            .collect())
+    }
+    
+    pub fn resolve_from_file_list(&self, directory: &str, pattern: &str, extract: Option<&str>) -> Result<Vec<String>> {
         let dir = expand_path(directory);
         let glob_pattern = format!("{}/{}", dir, pattern);
         
