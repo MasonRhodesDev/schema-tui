@@ -360,13 +360,35 @@ impl SchemaTUI {
     fn fire_change(&mut self, key: &str, value: Value) {
         self.values.insert(key.to_string(), value.clone());
         
-        // Auto-save to disk if config_path is set
+        self.invalidate_dependent_fields(key);
+        
         if let Err(e) = self.save_config() {
             eprintln!("Failed to save config: {}", e);
         }
         
         for handler in &self.change_handlers {
             handler(key, &value);
+        }
+    }
+    
+    fn invalidate_dependent_fields(&mut self, changed_key: &str) {
+        let mut fields_to_invalidate = Vec::new();
+        
+        for section in &self.schema.sections {
+            for field in &section.fields {
+                if let FieldType::Enum { options_source, .. } = &field.field_type {
+                    if let crate::schema::OptionSource::Script { depends_on, .. } = options_source {
+                        if depends_on.contains(&changed_key.to_string()) {
+                            let field_key = format!("{}.{}", section.id, field.id);
+                            fields_to_invalidate.push(field_key);
+                        }
+                    }
+                }
+            }
+        }
+        
+        for field_key in fields_to_invalidate {
+            self.active_widgets.remove(&field_key);
         }
     }
     
@@ -498,7 +520,7 @@ impl SchemaTUI {
                         }
                     }
                     crate::schema::OptionSource::Script { command, .. } => {
-                        match self.option_resolver.resolve_from_script_sync(command) {
+                        match self.option_resolver.resolve_from_script_sync(command, &self.values) {
                             Ok(opts) => opts,
                             Err(_) => vec![]
                         }
@@ -515,7 +537,6 @@ impl SchemaTUI {
                     .and_then(|v| v.as_str().map(String::from))
                     .or_else(|| default.clone());
                 
-                // Use searchable dropdown if provider-based (usually many options)
                 match &field.ui_widget {
                     UIWidget::DropdownSearchable => {
                         Box::new(SearchableDropdown::new(&field.label, options, initial))

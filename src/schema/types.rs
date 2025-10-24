@@ -117,6 +117,8 @@ pub enum OptionSource {
         command: String,
         #[serde(default)]
         cache_duration: Option<u64>,
+        #[serde(default)]
+        depends_on: Vec<String>,
     },
     
     #[serde(rename = "function")]

@@ -1,0 +1,56 @@
+{
+  "version": "1.0",
+  "title": "Dynamic Options Example",
+  "description": "Demonstrates cascading dropdowns with script-based option sources",
+  "sections": [
+    {
+      "id": "voice_config",
+      "title": "Voice Dictation",
+      "description": "Configure voice recognition settings",
+      "fields": [
+        {
+          "id": "language",
+          "label": "Language",
+          "description": "Select the language for voice recognition",
+          "type": "enum",
+          "options_source": {
+            "type": "static",
+            "values": ["en", "es", "fr"]
+          },
+          "default": "en"
+        },
+        {
+          "id": "preview_model",
+          "label": "Preview Model",
+          "description": "Fast model for real-time preview (depends on language)",
+          "type": "enum",
+          "options_source": {
+            "type": "script",
+            "command": "bash examples/scripts/list-models.sh preview ${voice_config.language}",
+            "depends_on": ["voice_config.language"],
+            "cache_duration": 300
+          }
+        },
+        {
+          "id": "final_model",
+          "label": "Final Model",
+          "description": "High-accuracy model for final transcription (depends on language)",
+          "type": "enum",
+          "options_source": {
+            "type": "script",
+            "command": "bash examples/scripts/list-models.sh final ${voice_config.language}",
+            "depends_on": ["voice_config.language"],
+            "cache_duration": 300
+          }
+        },
+        {
+          "id": "auto_submit",
+          "label": "Auto Submit",
+          "description": "Automatically submit transcription after silence",
+          "type": "boolean",
+          "default": true
+        }
+      ]
+    }
+  ]
+}

@@ -7,7 +7,7 @@ pub mod tui;
 pub use schema::{ConfigSchema, SchemaField, FieldType, OptionSource, UIWidget, SchemaParser};
 pub use options::{OptionProvider, OptionResolver};
 pub use config::{ConfigStore, ConfigLoader, ConfigSaver};
-pub use tui::{Widget, WidgetResult, SchemaTUI, SchemaTUIBuilder};
+pub use tui::{Widget, WidgetResult, SchemaTUI, SchemaTUIBuilder, Theme};
 
 #[cfg(test)]
 mod tests {
