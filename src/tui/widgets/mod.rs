@@ -1,15 +1,15 @@
 mod base;
-mod text_input;
 mod dropdown;
-mod toggle;
-mod number_input;
 mod float_input;
+mod number_input;
 mod searchable_dropdown;
+mod text_input;
+mod toggle;
 
 pub use base::*;
-pub use text_input::*;
 pub use dropdown::*;
-pub use toggle::*;
-pub use number_input::*;
 pub use float_input::*;
+pub use number_input::*;
 pub use searchable_dropdown::*;
+pub use text_input::*;
+pub use toggle::*;

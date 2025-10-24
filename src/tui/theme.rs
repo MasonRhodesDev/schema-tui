@@ -54,7 +54,7 @@ impl Theme {
             popup_border: Color::Cyan,
         }
     }
-    
+
     /// Dark theme with explicit colors
     pub fn dark() -> Self {
         Self {
@@ -77,7 +77,7 @@ impl Theme {
             popup_border: Color::Cyan,
         }
     }
-    
+
     /// Light theme with explicit colors
     pub fn light() -> Self {
         Self {

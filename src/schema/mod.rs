@@ -1,7 +1,7 @@
-mod types;
 mod parser;
+mod types;
 mod validation;
 
-pub use types::*;
 pub use parser::*;
+pub use types::*;
 pub use validation::*;

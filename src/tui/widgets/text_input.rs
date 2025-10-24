@@ -1,4 +1,5 @@
 use super::{Widget, WidgetResult, WidgetState};
+use crate::tui::theme::Theme;
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
     layout::Rect,
@@ -8,7 +9,6 @@ use ratatui::{
     Frame,
 };
 use serde_json::Value;
-use crate::tui::theme::Theme;
 
 pub struct TextInput {
     buffer: String,
@@ -21,7 +21,7 @@ impl TextInput {
     pub fn new(label: impl Into<String>, initial_value: impl Into<String>) -> Self {
         let buffer = initial_value.into();
         let cursor_pos = buffer.len();
-        
+
         Self {
             buffer,
             cursor_pos,
@@ -29,37 +29,37 @@ impl TextInput {
             label: label.into(),
         }
     }
-    
+
     fn insert_char(&mut self, c: char) {
         self.buffer.insert(self.cursor_pos, c);
         self.cursor_pos += 1;
     }
-    
+
     fn delete_char(&mut self) {
         if self.cursor_pos > 0 {
             self.buffer.remove(self.cursor_pos - 1);
             self.cursor_pos -= 1;
         }
     }
-    
+
     fn delete_forward(&mut self) {
         if self.cursor_pos < self.buffer.len() {
             self.buffer.remove(self.cursor_pos);
         }
     }
-    
+
     fn move_cursor_left(&mut self) {
         if self.cursor_pos > 0 {
             self.cursor_pos -= 1;
         }
     }
-    
+
     fn move_cursor_right(&mut self) {
         if self.cursor_pos < self.buffer.len() {
             self.cursor_pos += 1;
         }
     }
-    
+
     fn get_display_text(&self) -> String {
         if self.state == WidgetState::Editing {
             let mut display = self.buffer.clone();
@@ -83,13 +83,16 @@ impl Widget for TextInput {
         } else {
             Style::default().fg(theme.text)
         };
-        
+
         let text = self.get_display_text();
         let content = Line::from(vec![
-            Span::styled(format!("{}: ", self.label), Style::default().add_modifier(Modifier::BOLD)),
+            Span::styled(
+                format!("{}: ", self.label),
+                Style::default().add_modifier(Modifier::BOLD),
+            ),
             Span::styled(text, style),
         ]);
-        
+
         let block = Block::default()
             .borders(if focused { Borders::ALL } else { Borders::NONE })
             .border_style(if self.state == WidgetState::Editing {
@@ -102,16 +105,16 @@ impl Widget for TextInput {
             } else {
                 Style::default()
             });
-        
+
         let paragraph = Paragraph::new(content).block(block);
         frame.render_widget(paragraph, area);
     }
-    
+
     fn handle_key(&mut self, key: KeyEvent) -> WidgetResult {
         if self.state != WidgetState::Editing {
             return WidgetResult::Continue;
         }
-        
+
         match key.code {
             KeyCode::Enter => {
                 self.state = WidgetState::Normal;
@@ -152,23 +155,23 @@ impl Widget for TextInput {
             _ => WidgetResult::Continue,
         }
     }
-    
+
     fn get_value(&self) -> Value {
         Value::String(self.buffer.clone())
     }
-    
+
     fn set_value(&mut self, value: Value) {
         if let Some(s) = value.as_str() {
             self.buffer = s.to_string();
             self.cursor_pos = self.buffer.len();
         }
     }
-    
+
     fn reset(&mut self) {
         self.state = WidgetState::Normal;
         self.cursor_pos = self.buffer.len();
     }
-    
+
     fn activate(&mut self) {
         self.state = WidgetState::Editing;
         self.cursor_pos = self.buffer.len();

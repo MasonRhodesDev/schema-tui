@@ -1,4 +1,5 @@
 use super::{Widget, WidgetResult, WidgetState};
+use crate::tui::theme::Theme;
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
     layout::Rect,
@@ -8,7 +9,6 @@ use ratatui::{
     Frame,
 };
 use serde_json::Value;
-use crate::tui::theme::Theme;
 
 pub struct NumberInput {
     buffer: String,
@@ -20,10 +20,15 @@ pub struct NumberInput {
 }
 
 impl NumberInput {
-    pub fn new(label: impl Into<String>, initial_value: i64, min: Option<i64>, max: Option<i64>) -> Self {
+    pub fn new(
+        label: impl Into<String>,
+        initial_value: i64,
+        min: Option<i64>,
+        max: Option<i64>,
+    ) -> Self {
         let buffer = initial_value.to_string();
         let cursor_pos = buffer.len();
-        
+
         Self {
             buffer,
             cursor_pos,
@@ -33,39 +38,39 @@ impl NumberInput {
             max,
         }
     }
-    
+
     fn insert_char(&mut self, c: char) {
         if c.is_ascii_digit() || (c == '-' && self.cursor_pos == 0) {
             self.buffer.insert(self.cursor_pos, c);
             self.cursor_pos += 1;
         }
     }
-    
+
     fn delete_char(&mut self) {
         if self.cursor_pos > 0 {
             self.buffer.remove(self.cursor_pos - 1);
             self.cursor_pos -= 1;
         }
     }
-    
+
     fn validate(&self) -> Option<i64> {
         let num = self.buffer.parse::<i64>().ok()?;
-        
+
         if let Some(min) = self.min {
             if num < min {
                 return None;
             }
         }
-        
+
         if let Some(max) = self.max {
             if num > max {
                 return None;
             }
         }
-        
+
         Some(num)
     }
-    
+
     fn get_display_text(&self) -> String {
         if self.state == WidgetState::Editing {
             let mut display = self.buffer.clone();
@@ -80,7 +85,7 @@ impl NumberInput {
 impl Widget for NumberInput {
     fn render(&self, frame: &mut Frame, area: Rect, focused: bool, theme: &Theme) {
         let is_valid = self.validate().is_some();
-        
+
         let style = if self.state == WidgetState::Editing {
             if is_valid {
                 Style::default()
@@ -98,19 +103,25 @@ impl Widget for NumberInput {
         } else {
             Style::default().fg(theme.text)
         };
-        
+
         let text = self.get_display_text();
         let mut spans = vec![
-            Span::styled(format!("{}: ", self.label), Style::default().add_modifier(Modifier::BOLD)),
+            Span::styled(
+                format!("{}: ", self.label),
+                Style::default().add_modifier(Modifier::BOLD),
+            ),
             Span::styled(text, style),
         ];
-        
+
         if self.state == WidgetState::Editing && !is_valid {
-            spans.push(Span::styled(" ✗", Style::default().fg(theme.error).bg(theme.popup_bg)));
+            spans.push(Span::styled(
+                " ✗",
+                Style::default().fg(theme.error).bg(theme.popup_bg),
+            ));
         }
-        
+
         let content = Line::from(spans);
-        
+
         let block = Block::default()
             .borders(if focused { Borders::ALL } else { Borders::NONE })
             .border_style(if self.state == WidgetState::Editing {
@@ -127,16 +138,16 @@ impl Widget for NumberInput {
             } else {
                 Style::default()
             });
-        
+
         let paragraph = Paragraph::new(content).block(block);
         frame.render_widget(paragraph, area);
     }
-    
+
     fn handle_key(&mut self, key: KeyEvent) -> WidgetResult {
         if self.state != WidgetState::Editing {
             return WidgetResult::Continue;
         }
-        
+
         match key.code {
             KeyCode::Enter => {
                 if let Some(num) = self.validate() {
@@ -173,7 +184,7 @@ impl Widget for NumberInput {
             _ => WidgetResult::Continue,
         }
     }
-    
+
     fn get_value(&self) -> Value {
         if let Some(num) = self.validate() {
             Value::Number(num.into())
@@ -181,19 +192,19 @@ impl Widget for NumberInput {
             Value::String(self.buffer.clone())
         }
     }
-    
+
     fn set_value(&mut self, value: Value) {
         if let Some(n) = value.as_i64() {
             self.buffer = n.to_string();
             self.cursor_pos = self.buffer.len();
         }
     }
-    
+
     fn reset(&mut self) {
         self.state = WidgetState::Normal;
         self.cursor_pos = self.buffer.len();
     }
-    
+
     fn activate(&mut self) {
         self.state = WidgetState::Editing;
         self.cursor_pos = self.buffer.len();

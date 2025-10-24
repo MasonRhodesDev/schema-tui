@@ -1,8 +1,8 @@
 use super::app::SchemaTUI;
 use super::theme::Theme;
-use crate::schema::{ConfigSchema, SchemaParser};
 use crate::config::ConfigLoader;
 use crate::options::{OptionProvider, OptionResolver};
+use crate::schema::{ConfigSchema, SchemaParser};
 use anyhow::Result;
 use serde_json::Value;
 use std::collections::HashMap;
@@ -26,23 +26,23 @@ impl SchemaTUIBuilder {
             config_path: None,
         }
     }
-    
+
     pub fn schema(mut self, schema: ConfigSchema) -> Self {
         self.schema = Some(schema);
         self
     }
-    
+
     pub fn schema_file(mut self, path: impl AsRef<Path>) -> Result<Self> {
         let schema = SchemaParser::from_file(path)?;
         self.schema = Some(schema);
         Ok(self)
     }
-    
+
     pub fn initial_values(mut self, values: HashMap<String, Value>) -> Self {
         self.initial_values = Some(values);
         self
     }
-    
+
     pub fn config_file(mut self, path: impl AsRef<Path>) -> Result<Self> {
         let path_buf = path.as_ref().to_path_buf();
         // Load without expanding env vars so TUI can display literal $VAR values
@@ -52,7 +52,7 @@ impl SchemaTUIBuilder {
         self.config_path = Some(path_buf);
         Ok(self)
     }
-    
+
     pub fn register_option_provider(
         mut self,
         name: impl Into<String>,
@@ -61,23 +61,24 @@ impl SchemaTUIBuilder {
         self.option_providers.push((name.into(), provider));
         self
     }
-    
+
     pub fn theme(mut self, theme: Theme) -> Self {
         self.theme = theme;
         self
     }
-    
+
     pub fn build(self) -> Result<SchemaTUI> {
-        let schema = self.schema
+        let schema = self
+            .schema
             .ok_or_else(|| anyhow::anyhow!("Schema not provided"))?;
-        
+
         let initial_values = self.initial_values.unwrap_or_default();
-        
+
         let mut option_resolver = OptionResolver::new();
         for (name, provider) in self.option_providers {
             option_resolver.register_provider(name, provider);
         }
-        
+
         Ok(SchemaTUI::new(
             schema,
             initial_values,

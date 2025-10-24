@@ -1,17 +1,16 @@
-pub mod schema;
-pub mod options;
 pub mod config;
+pub mod options;
+pub mod schema;
 pub mod tui;
 
 // Re-export commonly used types
-pub use schema::{ConfigSchema, SchemaField, FieldType, OptionSource, UIWidget, SchemaParser};
+pub use config::{ConfigLoader, ConfigSaver, ConfigStore};
 pub use options::{OptionProvider, OptionResolver};
-pub use config::{ConfigStore, ConfigLoader, ConfigSaver};
-pub use tui::{Widget, WidgetResult, SchemaTUI, SchemaTUIBuilder, Theme};
+pub use schema::{ConfigSchema, FieldType, OptionSource, SchemaField, SchemaParser, UIWidget};
+pub use tui::{SchemaTUI, SchemaTUIBuilder, Theme, Widget, WidgetResult};
 
 #[cfg(test)]
 mod tests {
-    use super::*;
 
     #[test]
     fn test_builder_pattern() {

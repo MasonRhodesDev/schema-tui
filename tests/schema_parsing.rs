@@ -1,4 +1,4 @@
-use schema_tui::schema::{ConfigSchema, SchemaParser, FieldType, OptionSource};
+use schema_tui::schema::{FieldType, OptionSource, SchemaParser};
 
 #[test]
 fn test_parse_basic_schema() {
@@ -39,7 +39,7 @@ fn test_parse_basic_schema() {
     }"#;
 
     let schema = SchemaParser::from_string(schema_json).unwrap();
-    
+
     assert_eq!(schema.version, "1.0");
     assert_eq!(schema.title.unwrap(), "Test Schema");
     assert_eq!(schema.sections.len(), 1);
@@ -74,9 +74,12 @@ fn test_parse_enum_field() {
 
     let schema = SchemaParser::from_string(schema_json).unwrap();
     let field = &schema.sections[0].fields[0];
-    
+
     match &field.field_type {
-        FieldType::Enum { options_source, default } => {
+        FieldType::Enum {
+            options_source,
+            default,
+        } => {
             match options_source {
                 OptionSource::Static { values } => {
                     assert_eq!(values.len(), 3);
@@ -115,9 +118,13 @@ fn test_parse_path_field() {
 
     let schema = SchemaParser::from_string(schema_json).unwrap();
     let field = &schema.sections[0].fields[0];
-    
+
     match &field.field_type {
-        FieldType::Path { default, must_exist, .. } => {
+        FieldType::Path {
+            default,
+            must_exist,
+            ..
+        } => {
             assert_eq!(default.as_ref().unwrap(), "~/config.toml");
             assert_eq!(*must_exist, false);
         }

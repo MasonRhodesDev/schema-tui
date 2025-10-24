@@ -9,7 +9,7 @@ impl SchemaParser {
         let content = std::fs::read_to_string(path)?;
         Self::from_string(&content)
     }
-    
+
     pub fn from_string(content: &str) -> Result<ConfigSchema> {
         let schema: ConfigSchema = serde_json::from_str(content)?;
         Ok(schema)

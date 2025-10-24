@@ -28,22 +28,22 @@ pub struct SchemaField {
     pub id: String,
     pub label: String,
     pub description: String,
-    
+
     #[serde(flatten)]
     pub field_type: FieldType,
-    
+
     #[serde(default)]
     pub optional: bool,
-    
+
     #[serde(default)]
     pub env_expand: bool,
-    
+
     #[serde(default)]
     pub ui_widget: UIWidget,
-    
+
     #[serde(default)]
     pub keybind: Option<String>,
-    
+
     #[serde(default)]
     pub subsection: Option<String>,
 }
@@ -52,13 +52,13 @@ pub struct SchemaField {
 #[serde(tag = "type")]
 pub enum FieldType {
     #[serde(rename = "string")]
-    String { 
+    String {
         #[serde(default)]
         default: Option<String>,
         #[serde(default)]
         max_length: Option<usize>,
     },
-    
+
     #[serde(rename = "number")]
     Number {
         #[serde(default)]
@@ -68,7 +68,7 @@ pub enum FieldType {
         #[serde(default)]
         max: Option<i64>,
     },
-    
+
     #[serde(rename = "float")]
     Float {
         #[serde(default)]
@@ -80,19 +80,17 @@ pub enum FieldType {
         #[serde(default)]
         step: Option<f64>,
     },
-    
+
     #[serde(rename = "boolean")]
-    Boolean {
-        default: bool,
-    },
-    
+    Boolean { default: bool },
+
     #[serde(rename = "enum")]
     Enum {
         options_source: OptionSource,
         #[serde(default)]
         default: Option<String>,
     },
-    
+
     #[serde(rename = "path")]
     Path {
         #[serde(default)]
@@ -108,10 +106,8 @@ pub enum FieldType {
 #[serde(tag = "type")]
 pub enum OptionSource {
     #[serde(rename = "static")]
-    Static {
-        values: Vec<String>,
-    },
-    
+    Static { values: Vec<String> },
+
     #[serde(rename = "script")]
     Script {
         command: String,
@@ -120,17 +116,13 @@ pub enum OptionSource {
         #[serde(default)]
         depends_on: Vec<String>,
     },
-    
+
     #[serde(rename = "function")]
-    Function {
-        name: String,
-    },
-    
+    Function { name: String },
+
     #[serde(rename = "provider")]
-    Provider {
-        provider: String,
-    },
-    
+    Provider { provider: String },
+
     #[serde(rename = "file_list")]
     FileList {
         directory: String,

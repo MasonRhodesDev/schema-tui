@@ -1,5 +1,5 @@
-mod resolver;
 mod cache;
+mod resolver;
 
-pub use resolver::*;
 pub use cache::*;
+pub use resolver::*;

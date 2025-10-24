@@ -30,24 +30,22 @@ fn execute_external_editor(content: &str, editor: &str, extension: &str) -> Resu
     let temp_dir = std::env::temp_dir();
     let temp_file = temp_dir.join(format!("schema-tui-edit.{}", extension));
     std::fs::write(&temp_file, content)?;
-    
+
     // Disable raw mode for editor
     disable_raw_mode()?;
-    
+
     // Launch editor
-    let status = Command::new(editor)
-        .arg(&temp_file)
-        .status();
-    
+    let status = Command::new(editor).arg(&temp_file).status();
+
     // Re-enable raw mode
     enable_raw_mode()?;
-    
+
     match status {
         Ok(exit_status) if exit_status.success() => {
             // Read modified content
             let new_content = std::fs::read_to_string(&temp_file)?;
             std::fs::remove_file(&temp_file).ok();
-            
+
             if new_content != content {
                 Ok(Some(new_content))
             } else {
@@ -72,7 +70,7 @@ fn execute_custom_command(command: &str, current_value: &str) -> Result<Option<S
         .arg(command)
         .env("CURRENT_VALUE", current_value)
         .output()?;
-    
+
     if output.status.success() {
         let new_value = String::from_utf8(output.stdout)?.trim().to_string();
         if new_value != current_value && !new_value.is_empty() {

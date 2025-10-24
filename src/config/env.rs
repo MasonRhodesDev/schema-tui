@@ -1,13 +1,13 @@
 pub fn expand_env_vars(input: &str) -> String {
     let mut result = input.to_string();
-    
+
     // Expand tilde
     if result.starts_with("~/") {
         if let Some(home) = dirs::home_dir() {
             result = result.replacen("~", &home.display().to_string(), 1);
         }
     }
-    
+
     // Handle ${VAR} syntax
     while let Some(start) = result.find("${") {
         if let Some(end) = result[start..].find('}') {
@@ -21,7 +21,7 @@ pub fn expand_env_vars(input: &str) -> String {
             break;
         }
     }
-    
+
     // Handle $VAR syntax (without braces)
     let mut idx = 0;
     while idx < result.len() {
@@ -31,7 +31,7 @@ pub fn expand_env_vars(input: &str) -> String {
                 .find(|c: char| !c.is_alphanumeric() && c != '_')
                 .map(|i| var_start + i)
                 .unwrap_or(result.len());
-            
+
             if var_end > var_start {
                 let var_name = &result[var_start..var_end];
                 if let Ok(value) = std::env::var(var_name) {
@@ -43,7 +43,7 @@ pub fn expand_env_vars(input: &str) -> String {
         }
         idx += 1;
     }
-    
+
     result
 }
 
